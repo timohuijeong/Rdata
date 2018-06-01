@@ -1,0 +1,313 @@
+---
+title: "huijeong_report"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#**1. 요약(초록)**  
+청년실업률에 정부의 고용지원이 얼마나 청년들에게 도움이 되는지를 분석하였다. 서울복지실태조사 데이터에 있는 청년들의 데이터와 고용지원서비스(정부의 실업률에 관한 대책방안)를 통해서 얼마나 이 서비스가 효과적으로 청년들에게 도움이 되고 있는지를 알아보고자 한다. 
+
+#**2. 분석 주제**
+##1) 문제의식
+청년 실업률이란, 15세~29세에 해당하는 청년층의 실업을 의미한다. 한국은 매년 통계청이 실업률, 청년실업률에 관한 통계자료를 발표한다. 그 자료를 보면, 경제협력개발기구(OECD) 회원국들의 청년실업률 추이가 감소하는 것에 반해 한국은 2014년에는 9.0, 2015년에는 9.1, 2016년과 2017년에는 9.8로 청년실업률 추이가 증가하고 있다. 이를 통해서 현재 한국의 청년 실업률이 얼마나 심각한지 깨닫을 수 있었다.
+
+##2) 알아보고자 하는 것
+최근 대두되고 있는 청년실업률은 경제상황 악화, 일자리 감소를 비롯한 여러 원인 때문에 일어나고 있다. 이렇게 심각한 청년 실업률에 대한 정부의 대응 방안은 어떤 효과를 불러오는지 궁금해졌다. 고용지원서비스 실제 이용여부와 도움정도의 관계와 도움정도가 미치는 이용의향에 대한 영향에 대해 알아보고자 한다.
+
+#**3. 데이터 선정**
+##1)데이터 선정 이유
+2015 서울복지실태조사 데이터는 서울연구데이터서비스 사이트에 올라온 데이터로 서울특별시, 서울연구원이 주관하여 서울시민의 생활실태와 복지 욕구 변화 추적을 위해 데이터를 구축했다. 서울시 복지 정책 수립 및 집행성과 모니터링을 위한 근거 자료 수집을 조사목적으로 조사한 데이터로 필자가 알아보고자하는 청년실업률에 대한 방안을 찾기 위해서 유용하다. 이 데이터에서 가구주, 가구원, 연령, 고용지원서비스를 통해서 정부가 지원하는 고용지원서비스가 청년들에게 얼마나 도움이 되는지 알아보고자 한다.
+
+##2)데이터 소개
+출처: 서울연구데이터서비스
+URL: http://data.si.re.kr/sisurvey2015er17
+특성과 구성은 아래 데이터 파악하기에서 확인할 수 있다.
+
+#**4. 분석**
+##1)분석 목적 및 방법
+-목적: 고용지원서비스 이용자별 고용지원서비스 도움정도 분ㅅ
+###데이터불러오기
+```{r}
+library(ggplot2)
+library(dplyr)
+library(readxl)
+
+raw_welfare <- read_excel("2015_seoul_bockjisiltae_data.xlsx")
+
+welfare <- raw_welfare
+```
+먼저 필요한 함수들을 불러오고, 2015서울복지실태조사 데이터 파일이 엑셀파일이므로 readxl함수로 데이터 파일을 불러온다. 원본을 복구해야할 상황을 대비해서 복사본을 만든다.
+
+###데이터 파악하기(특성, 구성)
+```{r}
+head(welfare)
+tail(welfare)
+dim(welfare)
+str(welfare)
+summary(welfare)
+```
+str으로 불러온 데이터의 특성과 구성을 파악한다.
+
+###변수명 바꾸기
+```{r}
+welfare <- rename(welfare, 
+                  gagu1=A1_2_1,
+                  gagu2=A1_2_2,
+                  gagu3=A1_2_3,
+                  gagu4=A1_2_4,
+                  yb_intern=E9_2_4,
+                  yb_training=E9_2_5,
+                  yb_foundation=E9_2_6,
+                  intern=E9_3_4,
+                  training=E9_3_5,
+                  foundation=E9_3_6)
+```
+사용할 변수명을 알아보기 쉽게 변경한다. gagu1~gagu4는 가구원1~4를 나타내고, yb_intern은 고용지원서비스 이용여부 청년 인턴제도 변수이다. yb_training은 고용지원서비스 이용여부 직업훈련지원 변수이다. yb_foundation은 고용지원서비스 이용여부 창업지원 변수이다. intern은 고용지원서비스 도움정도 청년인턴제도 변수이다. training은 고용지원서비스 도움정도 직업훈련지원 변수이다. foundation은 고용지원서비스 도움정도 창업지원 변수이다.
+
+###바뀐 변수명 확인
+```{r}
+str(welfare)
+```
+
+###필요한 변수 추출
+```{r}
+welfare_1 <- welfare %>% 
+  select(gagu1,age_1,yb_intern,yb_training,yb_foundation,intern,training,foundation) %>% 
+  filter(gagu1 == "1" & age_1 < 30 & age_1 >= 15)
+
+welfare_2 <- welfare %>% 
+  select(gagu2,age_2,yb_intern,yb_training,yb_foundation,intern,training,foundation) %>% 
+  filter(gagu2 == "3" & age_2 < 30 & age_2 >= 15)
+
+welfare_3 <- welfare %>% 
+  select(gagu3,age_3,yb_intern,yb_training,yb_foundation,intern,training,foundation) %>%
+  filter(gagu3 == "3" & age_3 < 30 & age_3 >= 15)
+
+welfare_4 <- welfare %>% 
+  select(gagu4,age_4,yb_intern,yb_training,yb_foundation,intern,training,foundation) %>% 
+  filter(gagu4 == "3" & age_4 < 30 & age_4 >= 15)
+```
+select로 필요한 변수들(가구원,연령,이용여부,도움정도 등) 추출, filter로 청년(청년층이 즐비한 자녀쪽 가구원 번호 3번, 가구주 1번) 나이 15세이상 30세미만으로 지정하고 청년들의 정보만 추출한다.
+
+###변수명 통일
+```{r}
+welfare_1 <- rename(welfare_1,
+                    gagu = gagu1,
+                    age = age_1)
+welfare_2 <- rename(welfare_2,
+                    gagu = gagu2,
+                    age = age_2)
+welfare_3 <- rename(welfare_3,
+                    gagu = gagu3,
+                    age = age_3)
+welfare_4 <- rename(welfare_4,
+                    gagu = gagu4,
+                    age = age_4)
+```
+하나의 데이터로 만들기 위하여 변수명을 통일한다.
+
+###하나의 데이터 구성
+```{r}
+welfare_total <- bind_rows(welfare_1, welfare_2, welfare_3, welfare_4)
+```
+위에서 만든 변수명을 동일하게 지정해놓은 데이터 프레임들을 모두 모아서 bind_rows를 통하여 하나의 데이터로 만들어준다.
+
+###변수 검토 및 전처리
+```{r}
+table(is.na(welfare_total))
+```
+결측치를 확인한다. 결측치가 없으므로 다음 단계로 넘어간다.
+
+###이용여부에 따른 도움되는 정도 구하기
+```{r}
+welfare_total_a1<- welfare_total %>%
+  group_by(yb_intern) %>% 
+  summarise(mean_intern = mean(intern),
+            n=n())
+
+View(welfare_total_a1)
+```
+실제로 이용했을때, 도움이 되었는가를 알아보기 위하여 group_by를 통하여 이용자별 평균 고용지원서비스 청년인턴제도 도움 정도와 빈도를 알아보았다.
+확인을 위하여 View를 사용한다.
+한
+###그래프를 보기 쉽게 그리기 위해서 변수의 각 항목에 이름 부여하기(고용지원서비스 이용여부)
+```{r}
+welfare_total$yb_intern <- ifelse(welfare_total$yb_intern == 1, "1현재이용", 
+                                  ifelse(welfare_total$yb_intern == 2, "2과거이용", "3이용안함"))
+
+welfare_total$yb_training <- ifelse(welfare_total$yb_training == 1, "1현재이용", 
+                                    ifelse(welfare_total$yb_training == 2, "2과거이용", "3이용안함"))
+
+welfare_total$yb_foundation <- ifelse(welfare_total$yb_foundation == 1, "1현재이용", 
+                                      ifelse(welfare_total$yb_foundation == 2, "2과거이용", "3이용안함"))
+```
+고용지원서비스 이용여부 청년인턴제도 항목에 이름을 부여한다.
+고용지원서비스 이용여부 직업훈련지원 항목에 이름을 부여한다.
+고용지원서비스 이용여부 창업지원 항목에 이름을 부여한다.
+여기서 고용지원서비스 이용여부란, 실제로 이용을 한적이 있는지를 묻는다. 현재이용은 현재 이용중이고, 과거이용은 과거에 이용한 적이 있다는 의미이며, 이용안함은 한 번도 이용한 적이 없다는 뜻이다.
+
+###그래프를 보기 쉽게 그리기 위해서 변수의 각 항목에 이름 부여하기(고용지원서비스 도움정도)
+```{r}
+welfare_total$intern <- ifelse(welfare_total$intern == 1, "1전혀", 
+                               ifelse(welfare_total$intern == 2, "2별로", 
+                                      ifelse(welfare_total$intern == 3, "3보통",
+                                             ifelse(welfare_total$intern == 4, "4약간", "5매우"))))
+
+welfare_total$training <- ifelse(welfare_total$training == 1, "1전혀",
+                                 ifelse(welfare_total$training == 2, "2별로",
+                                        ifelse(welfare_total$training == 3, "3보통", 
+                                               ifelse(welfare_total$training == 4, "4약간", "5매우"))))
+
+welfare_total$foundation <- ifelse(welfare_total$foundation == 1, "1전혀",
+                                   ifelse(welfare_total$foundation == 2, "2별로",
+                                          ifelse(welfare_total$foundation == 3, "3보통",
+                                                 ifelse(welfare_total$foundation == 4, "4약간", "5매우"))))
+```
+고용지원서비스 도움정도 청년인턴제도 항목에 이름을 부여한다.
+고용지원서비스 도움정도 직업훈련지원 항목에 이름을 부여한다.
+고용지원서비스 도움정도 창업지원 항목에 이름을 부여한다.
+여기서 고용지원서비스 도움정도란, 청년인턴제도, 직업훈련지원, 창업지원이 도움이 될 것 같은지 아닌지에 대한 사람들의 인식 정도이다.
+
+###이용자별 도움정도인식에 따른 그래프 만들기
+```{r}
+ggplot(data = welfare_total_a1, aes(x = yb_intern, y = mean_intern, fill = n)) + geom_col() + coord_flip() 
+```
+실제로 도움이 되었는지를 이야기해보려고, 이용자별 도움 정도 인식에 대한 평균을 구해봤는데, n은 표본수이다. 그래프를 통한 결과를 살펴보면, 1번(현재 이용중인 사람)은 2번(과거에 이용한 사람)보다 도움이 되지 않았다고 생각하고, 2번(과거에 이용한 사람)은 3번(이용한 적 없는 사람)보다 도움이 되었다고 생각한다. 하지만 이 결과는 실제로 이용해본 사람들의 수가 37명밖에 없기 때문에 이것이 완전 옳다고 볼 수 없기에 추가분석을 했다.
+
+###추가분석###
+###변수명 변경하기
+```{r}
+welfare <- rename(welfare,
+                  ey_intern=E9_4_4,
+                  ey_training=E9_4_5,
+                  ey_foundation=E9_4_6)
+```
+이전 분석에서는 고용지원서비스를 이용하면 정말 청년들에게 도움이 되는지를 알아보았다면, 추가분석에서는 그 분석을 보완하기 위하여, 청년들이 고용지원서비스가 도움이 된다고 생각하면 그것이 이용의향(실제로 이용해볼 생각이 있느냐)에 영향을 미치는지 알아보려고 한다.
+
+먼저 추가로 필요한 고용지원서비스 이용의향에 따른 변수들의 코드명을 변수명으로 변경한다.
+
+###필요한 변수 추출
+```{r}
+welfare_5 <- welfare %>% 
+  filter(gagu1 == "1" & age_1 < 30 & age_1 >= 15) %>% 
+  select(gagu1,ey_intern,ey_training,ey_foundation)
+
+welfare_6 <- welfare %>% 
+  filter(gagu2 == "3" & age_2 < 30 & age_2 >= 15) %>% 
+  select(gagu2,ey_intern,ey_training,ey_foundation)
+
+welfare_7 <- welfare %>% 
+  filter(gagu3 == "3" & age_3 < 30 & age_3 >= 15) %>% 
+  select(gagu3,ey_intern,ey_training,ey_foundation)
+
+welfare_8 <- welfare %>% 
+  filter(gagu4 == "3" & age_4 < 30 & age_4 >= 15) %>% 
+  select(gagu4,ey_intern,ey_training,ey_foundation)
+```
+
+###변수명 통일
+```{r}
+welfare_5 <- rename(welfare_5,
+                    gagu = gagu1)
+welfare_6 <- rename(welfare_6,
+                    gagu = gagu2)
+welfare_7 <- rename(welfare_7,
+                    gagu = gagu3)
+welfare_8 <- rename(welfare_8,
+                    gagu = gagu4)
+```
+
+###하나의 데이터 구성
+```{r}
+welfare_total_b <- bind_rows(welfare_5, welfare_6, welfare_7, welfare_8)
+```
+
+###이전에 작업한 데이터와 추가분석을 위해 만든 데이터를 하나의 데이터로 합침
+```{r}
+welfare_all <- left_join(welfare_total, welfare_total_b, by = "gagu")
+```
+
+###변수 검토 및 전처리
+```{r}
+table(is.na(welfare_all))
+```
+결측치 총 몇개가 있나 확인하고, 결측치가 없으므로 다음 단계로 넘어간다.
+
+###그래프를 보기 쉽게 그리기 위해서 변수의 각 항목에 이름 부여하기(고용지원서비스 이용의향)
+```{r}
+welfare_all$ey_intern <- ifelse(welfare_all$ey_intern == 1, "1없음",
+                                  ifelse(welfare_all$ey_intern == 2, "2약간희망", "3매우희망"))
+
+welfare_all$ey_training <- ifelse(welfare_all$ey_training == 1, "1없음",
+                                    ifelse(welfare_all$ey_training == 2, "2약간희망", "3매우희망"))
+
+welfare_all$ey_foundation <- ifelse(welfare_all$ey_foundation == 1, "1없음", 
+                                      ifelse(welfare_all$ey_foundation == 2, "2약간희망", "3매우희망"))
+```
+고용지원서비스 이용의향 청년인턴제도 항목에 이름을 부여한다.
+고용지원서비스 이용의향 직업훈련지원 항목에 이름을 부여한다.
+고용지원서비스 이용의향 창업지원 항목에 이름을 부여한다.
+여기서 고용지원서비스 이용의향이란 청년인턴제도, 직업훈련지원, 창업지원을 이용할 의향이 있는지를 뜻한다.
+
+
+###도움정도인식에 따른 이용의향 빈도(1)
+```{r}
+welfare_df1 <- welfare_all %>%
+  group_by(intern,ey_intern) %>% 
+  summarise(bindo=n())
+```
+청년인턴제도가 도움이 되는지 안 되는지 갖고 있는 인식에 따른 이용의사의 빈도를 뜻한다.
+도움이 된다면 이용할 것인지 아닌지 이용의향을 갖고있는지를 조사해보려고 했다.
+
+###그래프 만들기(1)
+```{r}
+welfare_df1$intern <- as.factor(welfare_df1$intern)
+welfare_df1$ey_intern <- as.factor(welfare_df1$ey_intern)
+
+ggplot(data = welfare_df1, aes(x = intern, y = bindo, fill = ey_intern)) + geom_col() + coord_flip()
+```
+
+###도움정도인식에 따른 이용의향 빈도(2)
+```{r}
+welfare_df2 <- welfare_all %>%
+  group_by(training,ey_training) %>% 
+  summarise(bindo=n())
+```
+직업훈련지원이 도움이 되는지 안 되는지 갖고 있는 인식에 따른 이용의사의 빈도를 뜻한다.
+도움이 된다면 이용할 것인지 아닌지 이용의향을 갖고있는지를 조사해보려고 했다.
+
+###그래프 만들기(2)
+```{r}
+welfare_df2$training <- as.factor(welfare_df2$training)
+welfare_df2$ey_training <- as.factor(welfare_df2$ey_training)
+
+ggplot(data = welfare_df2, aes(x = training, y = bindo, fill = ey_training)) + geom_col() + coord_flip()
+```
+
+###도움정도인식에 따른 이용의향 빈도(3)
+```{r}
+welfare_df3 <- welfare_all %>%
+  group_by(foundation,ey_foundation) %>% 
+  summarise(bindo=n())
+```
+창업지원이 도움이 되는지 안 되는지 갖고 있는 인식에 따른 이용의사의 빈도를 뜻한다.
+도움이 된다면 이용할 것인지 아닌지 이용의향을 갖고있는지를 조사해보려고 했다.
+
+###그래프만들기(3)
+```{r}
+welfare_df3$foundation <- as.factor(welfare_df3$foundation)
+welfare_df3$ey_foundation <- as.factor(welfare_df3$ey_foundation)
+
+ggplot(data = welfare_df3, aes(x = foundation, y = bindo, fill = ey_foundation)) + geom_col() + coord_flip()
+```
+
+인식에 따라서 참여의향이 높아지니까 이 프로그램에 대한 인식개선이 필요하고, 그렇게 되면 실업난 해결에 도움이 될 것이라고 생각해서 시작한 이 분석은 초반의 분석과는 반대의 결과가 나왔다. 
+
+신기하게도 도움이 될거라고 생각하는데도, 도움정도와 이용의향은 비례하지 않았다. 이를 통해서 첫번째 설정한 가설은 틀렸지만, 도움이 될 거라는 것을 알고 있음에도 이용할 마음이 없다는 것은 무엇때문인지 좀 더 조사해볼 필요가 있다고 생각한다.
+
+
+#**5. 논의**
+##1)한계점, 비판점
+좀 더 구체적이고 사실적인 데이터가 있었으면 자세하게 분석할 수 있지 않았을까 싶다.
