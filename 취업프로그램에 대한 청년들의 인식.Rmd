@@ -1,11 +1,8 @@
 ---
-title: "huijeong_report"
+title: "2018_1_refort"
 output: github_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 #**1. 요약(초록)**  
 청년실업률에 정부의 고용지원이 얼마나 청년들에게 도움이 되는지를 분석하였다. 서울복지실태조사 데이터에 있는 청년들의 데이터와 고용지원서비스(정부의 실업률에 관한 대책방안)를 통해서 얼마나 이 서비스가 효과적으로 청년들에게 도움이 되고 있는지를 알아보고자 한다. 
 
@@ -27,7 +24,7 @@ URL: http://data.si.re.kr/sisurvey2015er17
 
 #**4. 분석**
 ##1)분석 목적 및 방법
--목적: 고용지원서비스 이용자별 고용지원서비스 도움정도 분ㅅ
+-목적: 고용지원서비스 이용자별 고용지원서비스 도움정도 분석
 ###데이터불러오기
 ```{r}
 library(ggplot2)
@@ -310,4 +307,4 @@ ggplot(data = welfare_df3, aes(x = foundation, y = bindo, fill = ey_foundation))
 
 #**5. 논의**
 ##1)한계점, 비판점
-좀 더 구체적이고 사실적인 데이터가 있었으면 자세하게 분석할 수 있지 않았을까 싶다.
+좀 더 구체적인 이용자들의 데이터가 있었으면 자세하게 분석할 수 있지 않았을까 싶다.
